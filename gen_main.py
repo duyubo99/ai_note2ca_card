@@ -1,14 +1,20 @@
 import os
 import json
+import asyncio
 from pathlib import Path
 from core.flatten_aijson import JsonFlattener
 from core.excel_generator import generate_excel
 from core.ppt_generator import generate_ppt
+from core.ai_core import process_docx
 
 
 def main():
     # 配置路径
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
+    docx_input_path = os.path.join(base_dir, "data/input/docx")
+
+    
     input_path = "data/input/json/ai"
     # 输入输出配置
     config = {
@@ -18,12 +24,25 @@ def main():
         "excel_output_file": "ai_transcript.xlsx"
     }
 
+    
+
     try:
         # 创建输出目录
         Path(config['temp_output_dir']).mkdir(parents=True, exist_ok=True)
         Path(config['output_dir']).mkdir(parents=True, exist_ok=True)
+        Path(os.path.join(base_dir, input_path)).mkdir(parents=True, exist_ok=True)
 
-        # 第一步：执行JSON展平处理
+        # 第一步：处理Word文档并生成JSON数据
+        print("开始处理Word文档...")
+        ai_output_dir = os.path.join(base_dir, input_path)
+        asyncio.run(process_docx(
+            input_dir=docx_input_path,
+            output_dir=ai_output_dir,
+            output_filename='ai_json.json'
+        ))
+        print(f"✓ Word文档处理完成，JSON数据保存在：{ai_output_dir}")
+
+        # 第二步：执行JSON展平处理
         json_processor = JsonFlattener(
             input_pattern=config['json_input_pattern'],
             output_dir=config['temp_output_dir']

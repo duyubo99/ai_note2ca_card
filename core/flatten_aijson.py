@@ -64,6 +64,11 @@ class JsonFlattener:
         
         # 字典排序并创建有序映射
         def custom_sort_key(s):
+            # 如果s包含总结标签，直接跳过
+            if '总结' in s:
+                return (s,)
+            # 否则按照自定义排序规则排序
+            
             parts = s.split('##')
             # 第一部分字典序
             part1 = parts[0]
@@ -73,7 +78,6 @@ class JsonFlattener:
             
             # 第三部分字典序
             part3 = parts[2] if len(parts) > 2 else ''
-            
             return (part1, part2_num, part3)
 
         sorted_h = sorted(unique_h, key=custom_sort_key)
