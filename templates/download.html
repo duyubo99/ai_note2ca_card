@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载解析结果 - AI笔录解析工具</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI笔录解析工具</h1>
+            <p>文件处理完成，请下载解析结果</p>
+        </header>
+
+        <main>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="messages">
+                        {% for category, message in messages %}
+                            <div class="message {{ category }}">
+                                <i class="fas fa-info-circle"></i> {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="download-container">
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i>
+                    <h2>处理完成！</h2>
+                    <p>您的文件已成功处理，请下载解析结果。</p>
+                </div>
+
+                <div class="download-files">
+                    {% if output_files %}
+                        <h3>可下载的文件：</h3>
+                        <ul class="download-list">
+                            {% if 'excel' in output_files %}
+                                <li>
+                                    <i class="fas fa-file-excel"></i>
+                                    <span>Excel文件</span>
+                                    <a href="{{ url_for('download_file', file_type='excel', filename=output_files['excel']) }}" class="download-btn">
+                                        <i class="fas fa-download"></i> 下载Excel
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% if 'ppt' in output_files and output_files['ppt'] %}
+                                {% for ppt_file in output_files['ppt'] %}
+                                    <li>
+                                        <i class="fas fa-file-powerpoint"></i>
+                                        <span>{{ ppt_file }}</span>
+                                        <a href="{{ url_for('download_file', file_type='ppt', filename=ppt_file) }}" class="download-btn">
+                                            <i class="fas fa-download"></i> 下载PPT
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            {% endif %}
+                        </ul>
+                    {% else %}
+                        <div class="no-files">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>没有生成任何文件，请返回重试。</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="action-buttons">
+                    <a href="{{ url_for('reset') }}" class="action-btn">
+                        <i class="fas fa-redo"></i> 处理新文件
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 AI笔录解析工具</p>
+        </footer>
+    </div>
+</body>
+</html>
