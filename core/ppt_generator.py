@@ -1184,8 +1184,8 @@ def process_json_file(json_file_path: str, output_dir: str) -> str:
         # 获取文件名（不含扩展名）
         file_name = os.path.splitext(os.path.basename(json_file_path))[0]
         
-        # 保存PPT
-        output_path = os.path.join(output_dir, f"{file_name}_new.pptx")
+        # 保存PPT - 使用原始文件名来确保唯一性
+        output_path = os.path.join(output_dir, f"AI笔录解析PPT.pptx")
         prs.save(output_path)
         print(f"已生成PPT: {output_path}")
         

@@ -3,104 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文件处理系统</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>AI笔录解析系统</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <header class="text-center my-5">
-            <h1 class="fw-bold">文件处理系统</h1>
-            <p class="lead text-secondary">上传JSON文件，自动生成Excel和PPT</p>
-        </header>
-
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0"><i class="bi bi-cloud-upload me-2"></i>文件上传</h5>
+        <h1 class="text-center mb-4">AI笔录解析系统</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
-                    <div class="card-body">
-                        <form id="upload-form" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <label for="file-input" class="form-label">选择JSON文件</label>
-                                <input type="file" class="form-control" id="file-input" name="files" accept=".json" multiple>
-                                <div class="form-text">请上传JSON格式的文件，支持批量上传，最大支持16MB</div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">选择生成类型</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="generate-excel" name="generate-excel" checked>
-                                    <label class="form-check-label" for="generate-excel">
-                                        生成Excel文件
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="generate-ppt" name="generate-ppt" checked>
-                                    <label class="form-check-label" for="generate-ppt">
-                                        生成PPT文件
-                                    </label>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary" id="upload-btn">上传并处理</button>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="card mb-4 d-none" id="processing-card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0"><i class="bi bi-arrow-repeat me-2"></i>处理中</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-center">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">处理中...</span>
-                            </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="card">
+            <div class="card-header">
+                文件上传与处理
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('upload_files') }}" method="post" enctype="multipart/form-data" id="upload-form">
+                    <div class="mb-4">
+                        <label class="form-label">选择要处理的Word文档文件（.docx）</label>
+                        <div class="file-upload-wrapper">
+                            <label class="custom-file-upload" id="file-upload-label">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                                点击或拖拽文件到此处上传
+                                <br>
+                                <small class="text-muted">支持多个文件同时上传</small>
+                            </label>
+                            <input type="file" name="files[]" class="file-upload-input" id="file-upload" multiple accept=".docx">
                         </div>
-                        <p class="text-center mt-3">文件正在处理中，请稍候...</p>
-                    </div>
-                </div>
-
-                <div class="card mb-4 d-none" id="result-card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0"><i class="bi bi-check-circle me-2"></i>处理结果</h5>
-                        <button class="btn btn-sm btn-outline-secondary collapse-btn" data-target="result-card-body">
-                            <i class="bi bi-chevron-up"></i>
-                        </button>
-                    </div>
-                    <div class="card-body" id="result-card-body">
-                        <div id="result-messages">
-                            <!-- 处理消息将在这里显示 -->
+                        <div class="selected-files" id="selected-files">
+                            <p class="mb-1">已选择的文件：</p>
+                            <ul id="file-list" class="list-group list-group-flush"></ul>
                         </div>
                     </div>
-                </div>
-
-                <div class="card mb-4" id="existing-files-card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0"><i class="bi bi-folder2-open me-2"></i>已生成的文件</h5>
-                        <div>
-                            <button class="btn btn-sm btn-outline-secondary" id="refresh-files-btn">刷新</button>
-                            <button class="btn btn-sm btn-outline-secondary collapse-btn ms-2" data-target="existing-files-card-body">
-                                <i class="bi bi-chevron-up"></i>
-                            </button>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">选择输出格式</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="excel" id="excel-checkbox" checked>
+                            <label class="form-check-label" for="excel-checkbox">
+                                Excel格式
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="ppt" id="ppt-checkbox" checked>
+                            <label class="form-check-label" for="ppt-checkbox">
+                                PPT格式
+                            </label>
                         </div>
                     </div>
-                    <div class="card-body" id="existing-files-card-body">
-                        <div id="existing-files" class="list-group">
-                            <!-- 已存在的文件列表将在这里显示 -->
-                            <p class="text-center text-muted" id="no-files-message">暂无文件</p>
-                        </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submit-btn">开始处理</button>
                     </div>
+                </form>
+                
+                <div class="processing-indicator" id="processing-indicator">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">处理中...</span>
+                    </div>
+                    <p class="mt-2">正在处理文件，请稍候...</p>
+                    <p class="text-muted small">处理时间取决于文件大小和数量，可能需要几分钟</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

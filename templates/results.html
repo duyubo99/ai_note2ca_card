@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>处理结果 - AI笔录解析系统</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">处理结果</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="card">
+            <div class="card-header">
+                处理完成
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    文件处理已完成，您可以下载以下生成的文件：
+                </div>
+                
+                <div class="file-list mt-4">
+                    {% if output_files %}
+                        {% for file_type, filename in output_files %}
+                            <div class="file-item d-flex align-items-center">
+                                {% if 'Excel' in file_type %}
+                                    <i class="bi bi-file-earmark-excel-fill file-icon excel-icon"></i>
+                                {% elif 'PPT' in file_type %}
+                                    <i class="bi bi-file-earmark-slides-fill file-icon ppt-icon"></i>
+                                {% else %}
+                                    <i class="bi bi-file-earmark-fill file-icon"></i>
+                                {% endif %}
+                                
+                                <div class="file-info">
+                                    <h5 class="mb-1">{{ filename }}</h5>
+                                    <p class="mb-0 text-muted">{{ file_type }}</p>
+                                </div>
+                                
+                                <a href="{{ url_for('download_file', filename=filename) }}" class="btn btn-success">
+                                    <i class="bi bi-download me-1"></i> 下载
+                                </a>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            没有生成任何文件。请返回并重试。
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-1"></i> 返回首页
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/results.js') }}"></script>
+</body>
+</html>

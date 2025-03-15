@@ -19,13 +19,14 @@ from core.prompt_manager import *
 from tqdm.asyncio import tqdm_asyncio
 
 
-def extract_word_tables(file_path=None, input_dir='data/input/docx'):
+def extract_word_tables(file_path=None, file_paths=None, input_dir='data/input/docx'):
     """
     从Word文档中提取表格内容
     
     Args:
         file_path: 单个文档路径，如果提供则只处理该文档
-        input_dir: 文档目录，当file_path为None时使用
+        file_paths: 多个文档路径的列表，优先级高于file_path
+        input_dir: 文档目录，当file_path和file_paths都为None时使用
         
     Returns:
         包含(文档路径, 表格内容)元组的列表
@@ -33,7 +34,9 @@ def extract_word_tables(file_path=None, input_dir='data/input/docx'):
     result = []
     
     # 确定要处理的文档列表
-    if file_path:
+    if file_paths and isinstance(file_paths, list):
+        docxs = file_paths
+    elif file_path:
         docxs = [file_path]
     else:
         docxs = glob.glob(f'{input_dir}/*.docx')
@@ -106,13 +109,14 @@ def postprocess(results, doc_path, j):
         print(f'[postprocess] fail, json : {j}, error : {traceback.format_exc()}')
 
 
-async def process_docx(file_path=None, input_dir='data/input/docx', output_dir='data/input/json/temp', output_filename='ai_json.json'):
+async def process_docx(file_path=None, file_paths=None, input_dir='data/input/docx', output_dir='data/input/json/temp', output_filename='ai_json.json'):
     """
     处理Word文档并生成结构化JSON数据
     
     Args:
         file_path: 单个文档路径，如果提供则只处理该文档
-        input_dir: 文档目录，当file_path为None时使用
+        file_paths: 多个文档路径的列表，优先级高于file_path
+        input_dir: 文档目录，当file_path和file_paths都为None时使用
         output_dir: 输出目录
         output_filename: 输出文件名
         
@@ -123,7 +127,7 @@ async def process_docx(file_path=None, input_dir='data/input/docx', output_dir='
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     
     # 提取表格内容
-    info = extract_word_tables(file_path, input_dir)
+    info = extract_word_tables(file_path, file_paths, input_dir)
     
     # 处理每个表格内容
     process_task = [process(doc_path, txt) for (doc_path, txt) in info]
@@ -159,6 +163,21 @@ def process_file(file_path, output_dir='data/input/json/temp', output_filename='
         处理结果字典
     """
     return asyncio.run(process_docx(file_path=file_path, output_dir=output_dir, output_filename=output_filename))
+
+
+def process_files(file_paths, output_dir='data/input/json/temp', output_filename='ai_json.json'):
+    """
+    处理多个Word文档并生成结构化JSON数据（外部调用接口）
+    
+    Args:
+        file_paths: 文档路径列表
+        output_dir: 输出目录
+        output_filename: 输出文件名
+        
+    Returns:
+        处理结果字典
+    """
+    return asyncio.run(process_docx(file_paths=file_paths, output_dir=output_dir, output_filename=output_filename))
 
 
 async def main():
